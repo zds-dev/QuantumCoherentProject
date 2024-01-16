@@ -50,7 +50,7 @@ def measure_z(circuit, q, b, bit=0):
     circuit.measure(bit, bit)
     return circuit, q, b
 
-def measure_arbitrary(circuit, q, b, bit=0, theta=0, phi=0):
+def measure_arbitrary(circuit, q, b, bit=0, theta=0, phi=0, delay=0):
     # Measure at an arbitrary angle therefore rotate axis by negative angle
     # To test properly should be equivalent to measure_x when theta=pi/2 and phi=0
     circuit.rz(-phi, q[bit])
