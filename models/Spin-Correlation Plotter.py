@@ -66,6 +66,9 @@ state = general_three_state_creator(prod1, prod2, prod3, 1/np.sqrt(3), 1/np.sqrt
 x_values = np.zeros([resolution,resolution])
 y_values = np.zeros([resolution,resolution])
 z_values = np.zeros([resolution,resolution])
+theta_values = np.zeros([resolution,resolution])
+phi_values = np.zeros([resolution,resolution])
+correlation_values = np.zeros([resolution,resolution])
 i=0
 n=0
 
@@ -75,6 +78,9 @@ for phi in phi_value_range:
         x_values[i,n]=val*np.sin(theta)*np.cos(phi)
         y_values[i,n]=val*np.sin(theta)*np.sin(phi)
         z_values[i,n] =val*np.cos(theta)
+        theta_values[i,n]=theta
+        phi_values[i,n]=phi
+        correlation_values[i,n] = val
         i+=1
     i=0
     n+=1
@@ -82,3 +88,11 @@ for phi in phi_value_range:
 fig = plt.figure(1)
 ax=fig.gca(projection='3d')
 surf = ax.plot_surface(x_values,y_values,z_values)   
+
+fig = plt.figure(2)
+ax=fig.gca(projection='3d')
+surf = ax.plot_surface(theta_values,phi_values,correlation_values) 
+
+fig = plt.figure(3) # Takes x-z plane
+ax=fig.gca()
+surf = ax.plot(theta_values,correlation_values[:,0])
