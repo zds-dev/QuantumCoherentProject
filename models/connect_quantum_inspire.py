@@ -7,5 +7,5 @@ def connect_qi(token_file, project_name='Qiskit API'):
     enable_account(token)
     QI.set_authentication()
     QI.set_project_name(project_name)
-
+    return QI
 
