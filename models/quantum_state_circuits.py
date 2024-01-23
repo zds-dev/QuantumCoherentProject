@@ -62,7 +62,6 @@ def measure_arbitrary(circuit, q, b, bit=0, theta=0, phi=0, delay=0):
 
 def measure_circuit_directions(circuit, q, b, measurement_directions, backend, shots=1000):
     expectation_list = []
-    variance_list = []
     results = {'00': [], '01': [], '10': [], '11': []}
     jobs = []
     for i in range(np.size(measurement_directions, 1)):
@@ -92,4 +91,39 @@ def measure_circuit_directions(circuit, q, b, measurement_directions, backend, s
 
     print(qi_job.job_id())
     qi_job.set_job_id(qi_job.job_id() + '_arbitrary')
+    return expectation_list, results
+
+def measure_circuit_delays(circuit, q, b, delays, theta1, phi1, theta2, phi2, backend, shots=1000):
+    expectation_list = []
+    results = {'00': [], '01': [], '10': [], '11': []}
+
+    items = np.size(delays)
+    # If delays is longer then 20, split into multiple jobs, otherwise QI will reject
+    jobs_lim = 20
+    for j in range(items//jobs_lim+1):
+        jobs = []
+        for i in range(max(0, j*jobs_lim), min(items, (j+1)*jobs_lim)):
+            icircuit = circuit.copy()
+            icircuit.barrier()
+            icircuit.delay(int(delays[i]))
+            icircuit.barrier()
+            icircuit, q, b = measure_arbitrary(icircuit, q, b, 0, theta1, phi1)
+            icircuit, q, b = measure_arbitrary(icircuit, q, b, 1, theta2, phi2)
+            jobs.append(icircuit.copy())
+
+        if len(jobs)>0:
+            qi_job = execute(jobs, backend=backend, initial_layout={q[0]: 0, q[1]: 2}, shots=shots)
+            qi_result = qi_job.result()
+
+            for i in range(min(items, (j+1)*jobs_lim)-max(0, j*jobs_lim)):
+                probabilities_histogram = qi_result.get_probabilities(i)
+                spins = [-(sum(map(int, list(state))) % 2 * 2 - 1) for state, val in probabilities_histogram.items()]
+                expectation_list.append(sum([spins[i] * val for i, val in enumerate(probabilities_histogram.values())]))
+                # variance_list.append(np.var([spins[i]*val for i, val in enumerate(probabilities_histogram.values())]))
+                for key in results.keys():
+                    if key not in probabilities_histogram.keys():
+                        results[key].append(0)
+                    else:
+                        results[key].append(probabilities_histogram[key])
+
     return expectation_list, results
