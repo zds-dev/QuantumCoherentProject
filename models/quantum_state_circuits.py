@@ -2,16 +2,47 @@ from qiskit import QuantumCircuit, QuantumRegister, ClassicalRegister
 from qiskit import execute
 import numpy as np
 
-def create_product_state(bool=0):
+def create_product_state(bool=0, off=False):
     # |00> or |11>
     q = QuantumRegister(2)
     b = ClassicalRegister(2)
     circuit = QuantumCircuit(q, b)
     if bool:
         circuit.x(q[0])
-        circuit.x(q[1])
+        if not off:
+            circuit.x(q[1])
+    else:
+        if off:
+            circuit.x(q[1])
+
     return circuit, q, b
 
+
+def create_mix_state():
+    # |00> + |01> + |10> + |11>
+    q = QuantumRegister(2)
+    b = ClassicalRegister(2)
+    circuit = QuantumCircuit(q, b)
+    circuit.h(q[0])
+    circuit.h(q[1])
+    return circuit, q, b
+
+def create_unentangled_sum():
+    #|00> + |01>
+    q = QuantumRegister(2)
+    b = ClassicalRegister(2)
+    circuit = QuantumCircuit(q, b)
+    circuit.h(q[0])
+    return circuit, q, b
+
+def create_unentangle_diff():
+    #|00> - |01>
+    q = QuantumRegister(2)
+    b = ClassicalRegister(2)
+    circuit = QuantumCircuit(q, b)
+    circuit.x(q[0])
+    circuit.h(q[0])
+    return circuit, q, b
 
 def create_entangled_triplet():
     # |01> + |10>
@@ -29,6 +60,7 @@ def create_entangled_singlet():
     q = QuantumRegister(2)
     b = ClassicalRegister(2)
     circuit = QuantumCircuit(q, b)
+    circuit.initialize('00')
     circuit.x(q[0])
     circuit.x(q[1])
     circuit.h(q[1])
@@ -75,7 +107,7 @@ def measure_circuit_directions(circuit, q, b, measurement_directions, backend, s
         icircuit, q, b = measure_arbitrary(icircuit, q, b, 1, theta2, phi2)
         jobs.append(icircuit.copy())
 
-    qi_job = execute(jobs, backend=backend, shots=shots)
+    qi_job = execute(jobs, initial_layout={q[0]:1, q[1]:2}, backend=backend, shots=shots)
     qi_result = qi_job.result()
 
     for i,job in enumerate(jobs):
@@ -89,8 +121,6 @@ def measure_circuit_directions(circuit, q, b, measurement_directions, backend, s
             else:
                 results[key].append(probabilities_histogram[key])
 
-    print(qi_job.job_id())
-    qi_job.set_job_id(qi_job.job_id() + '_arbitrary')
     return expectation_list, results
 
 def measure_circuit_delays(circuit, q, b, delays, theta1, phi1, theta2, phi2, backend, shots=1000):
@@ -112,7 +142,7 @@ def measure_circuit_delays(circuit, q, b, delays, theta1, phi1, theta2, phi2, ba
             jobs.append(icircuit.copy())
 
         if len(jobs)>0:
-            qi_job = execute(jobs, backend=backend, initial_layout={q[0]: 0, q[1]: 2}, shots=shots)
+            qi_job = execute(jobs, initial_layout={q[0]:1, q[1]:2}, backend=backend, shots=shots)
             qi_result = qi_job.result()
 
             for i in range(min(items, (j+1)*jobs_lim)-max(0, j*jobs_lim)):
